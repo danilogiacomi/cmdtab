@@ -45,6 +45,8 @@ final class SystemWindowEnumerator: WindowEnumerating {
                     title: axTitle(axWindow),
                     isMinimized: isMinimized(axWindow),
                     isFullScreen: isFullScreen(axWindow),
+                    // App-scoped: macOS hides whole apps (Cmd+H), not individual
+                    // windows, so every window of a hidden app reports isHidden.
                     isHidden: app.isHidden
                 ))
             }
