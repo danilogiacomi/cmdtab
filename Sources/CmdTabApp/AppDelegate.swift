@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let monitor = CGEventTapHotkeyMonitor()
     private let overlay = SwitcherOverlay()
     private var controller: SwitcherController?
+    private var focusObserver: NSObjectProtocol?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setUpMenuBar()
@@ -34,7 +35,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// Keep the MRU list warm by recording every app activation's frontmost window.
     private func observeFocusChanges() {
-        NSWorkspace.shared.notificationCenter.addObserver(
+        focusObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didActivateApplicationNotification,
             object: nil, queue: .main
         ) { [weak self] note in
@@ -59,6 +60,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func startSwitcher() {
+        guard controller == nil else { return }
         let controller = SwitcherController(enumerator: enumerator, activator: activator, mru: mru)
         controller.onShow = { [weak self] windows, selected in
             self?.overlay.show(windows, selected: selected)
@@ -88,6 +90,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func quit() {
         monitor.stop()
+        if let focusObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(focusObserver)
+        }
         NSApp.terminate(nil)
     }
 }
