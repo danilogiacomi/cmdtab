@@ -18,8 +18,20 @@ mkdir -p "$APP/Contents/MacOS"
 cp "$BIN" "$APP/Contents/MacOS/CmdTab"
 cp "$ROOT/Scripts/CmdTab-Info.plist" "$APP/Contents/Info.plist"
 
-# Ad-hoc sign so a stable code identity persists across rebuilds, which keeps
-# the granted Accessibility permission attached to the app.
-codesign --force --deep --sign - "$APP"
+# Sign with a stable self-signed identity when available so the macOS
+# Accessibility / Input Monitoring grant persists across rebuilds (TCC keys the
+# grant on the signing certificate, not the per-build cdhash). Ad-hoc signing
+# does NOT persist — every code change yields a new cdhash and macOS re-prompts.
+# Create the identity once with ./Scripts/make-signing-cert.sh
+IDENTITY="${CMDTAB_SIGN_IDENTITY:-CmdTab Self-Signed}"
+if security find-identity -v -p codesigning 2>/dev/null | grep -q "$IDENTITY"; then
+  codesign --force --deep --sign "$IDENTITY" "$APP"
+  echo "Signed with '$IDENTITY'."
+else
+  codesign --force --deep --sign - "$APP"
+  echo "warning: signing identity '$IDENTITY' not found — used ad-hoc signing." >&2
+  echo "         Accessibility permission will NOT persist across code changes." >&2
+  echo "         Run ./Scripts/make-signing-cert.sh once to fix this." >&2
+fi
 
 echo "Built $APP"
