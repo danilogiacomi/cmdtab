@@ -10,9 +10,7 @@ symlink to it.
 `Command+Tab` key combination — a window switcher in the spirit of the KDE Plasma
 desktop, rather than the default macOS app switcher.
 
-> Status: greenfield. The implementation does not exist yet. Commands below are
-> **templated placeholders** — replace the `TODO` markers once the build system is in
-> place (likely a Swift Package or an Xcode project).
+> Status: active development. `Package.swift` is in place; the commands below are real.
 
 ## Build · Test · Lint
 
