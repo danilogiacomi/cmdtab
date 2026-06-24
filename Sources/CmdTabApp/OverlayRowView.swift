@@ -8,7 +8,15 @@ final class OverlayRowView: NSView {
     private let iconView = NSImageView()
     private let titleLabel = NSTextField(labelWithString: "")
 
-    init(index: Int, icon: NSImage?, appName: String, title: String) {
+    init(
+        index: Int,
+        icon: NSImage?,
+        appName: String,
+        title: String,
+        isMinimized: Bool,
+        isFullScreen: Bool,
+        isHidden: Bool
+    ) {
         self.index = index
         super.init(frame: .zero)
         wantsLayer = true
@@ -26,16 +34,41 @@ final class OverlayRowView: NSView {
         titleLabel.textColor = .labelColor
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
 
+        // Trailing column of state icons; only active states get a view.
+        let states = NSStackView()
+        states.orientation = .horizontal
+        states.spacing = 6
+        states.translatesAutoresizingMaskIntoConstraints = false
+        states.setContentHuggingPriority(.required, for: .horizontal)
+        states.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let symbols: [(Bool, String, String)] = [
+            (isMinimized, "minus.circle", "Minimized"),
+            (isFullScreen, "arrow.up.left.and.arrow.down.right", "Full screen"),
+            (isHidden, "eye.slash", "Hidden"),
+        ]
+        for (active, symbol, label) in symbols where active {
+            let image = NSImage(systemSymbolName: symbol, accessibilityDescription: label)
+            let view = NSImageView(image: image ?? NSImage())
+            view.contentTintColor = .secondaryLabelColor
+            view.translatesAutoresizingMaskIntoConstraints = false
+            view.widthAnchor.constraint(equalToConstant: 16).isActive = true
+            view.heightAnchor.constraint(equalToConstant: 16).isActive = true
+            states.addArrangedSubview(view)
+        }
+
         addSubview(iconView)
         addSubview(titleLabel)
+        addSubview(states)
         NSLayoutConstraint.activate([
             iconView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 6),
             iconView.centerYAnchor.constraint(equalTo: centerYAnchor),
             iconView.widthAnchor.constraint(equalToConstant: 44),
             iconView.heightAnchor.constraint(equalToConstant: 44),
             titleLabel.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 8),
-            titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
+            titleLabel.trailingAnchor.constraint(equalTo: states.leadingAnchor, constant: -8),
             titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+            states.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
+            states.centerYAnchor.constraint(equalTo: centerYAnchor),
         ])
     }
 
