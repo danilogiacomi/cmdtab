@@ -1,40 +1,70 @@
 # CmdTab
 
-A macOS application that lets you switch between **windows** by pressing the
-`Command+Tab` key combination — much like window switching on a KDE Plasma desktop.
+**`⌘Tab` should switch windows, not apps. Now it does.**
 
-The default macOS `Command+Tab` switches between *applications*. CmdTab instead cycles
-through individual *windows*, so two windows of the same app are first-class targets.
+CmdTab is a macOS window switcher in the spirit of KDE Plasma. The stock macOS
+`⌘Tab` cycles through *applications* — leaving you to hunt for the right window
+once you land. CmdTab cycles through *windows*, so every window is a first-class
+target: two editors, three terminals, that one Finder window you lost — each gets
+its own row, one keystroke away.
+
+```
+        ┌───────────────────────────────────────────────┐
+        │   ▸ ⌨  Terminal — ~/Progetti/cmdtab            │
+        │     🌐  Safari — Pull Request #42               │
+        │     📝  Xcode — SwitcherOverlay.swift           │
+        │     🗂  Finder — Downloads                       │
+        └───────────────────────────────────────────────┘
+              hold ⌘ · tap Tab to advance · release to switch
+```
+
+## Why
+
+The Mac app switcher is great until you live in many windows. Web devs, writers,
+anyone juggling several documents of the same app — you press `⌘Tab`, land on the
+app, and *then* go fishing through `⌘\`` or Mission Control for the actual window.
+CmdTab cuts the second step. One gesture, straight to the window you want.
+
+## Features
+
+- **Per-window switching** — no app grouping; every window is its own row.
+- **Most-recently-used order** — the first Tab jumps to the window you were just
+  in, so flip-flopping between two windows is a single tap.
+- **Reaches everywhere** — windows on other Spaces, minimized windows, and windows
+  of hidden apps all show up and activate correctly.
+- **Pure keyboard flow** — hold `⌘`, tap `Tab` to advance (`⌘⇧Tab` to go back),
+  arrow keys to fine-tune, release `⌘` to switch, `Esc` to cancel.
+- **Stays out of the way** — the overlay appears on the screen under your pointer,
+  ignores stray mouse hover until you actually move, and the native switcher never
+  butts in.
+- **Self-healing** — the event tap recovers automatically after system timeouts, so
+  it keeps working session after session.
+
+## Requirements
+
+- macOS 14 (Sonoma) or later.
+- **Accessibility** permission (and **Input Monitoring** if prompted) — CmdTab needs
+  these to observe the `⌘Tab` gesture and to enumerate and raise windows. You grant
+  them by hand in **System Settings → Privacy & Security**; CmdTab will guide you on
+  first launch.
+
+## Build & run
+
+```bash
+swift build                              # build all targets
+swift test                               # run the CmdTabCore unit tests
+./Scripts/bundle.sh debug                # assemble CmdTab.app into build/
+open build/CmdTab.app                     # launch it
+```
+
+Grant the requested permissions on first launch, then hold `⌘` and tap `Tab`.
 
 ## Status
 
-🌱 **Greenfield** — the implementation has not started yet. This repository currently
-contains the project scaffold (instructions, CI, and contribution conventions). See
-[`AGENTS.md`](AGENTS.md) for build/test/lint commands and the working agreement.
-
-## Goals
-
-- Switch between open windows (not just apps) with `Command+Tab`.
-- A Plasma-like switcher overlay showing window thumbnails/titles.
-- Fast, keyboard-driven, low-overhead, and unobtrusive.
-
-## Requirements (planned)
-
-- macOS (version TBD).
-- **Accessibility** and/or **input-monitoring** permissions, which the app needs to
-  observe key events and enumerate/raise windows. These are granted manually by the
-  user in System Settings → Privacy & Security.
-
-## Getting started
-
-The toolchain is not chosen yet (likely a Swift Package or Xcode project). Once it
-lands, build and test commands will live in [`AGENTS.md`](AGENTS.md). For now:
-
-```bash
-git clone <repo-url>
-cd cmdtab
-# build/test commands: TODO — see AGENTS.md
-```
+🛠 **Active development.** The core switcher works end to end — gesture capture,
+window enumeration across Spaces, the MRU overlay, and activation are all in place.
+See [`docs/manual-test-checklist.md`](docs/manual-test-checklist.md) for what's
+verified and [`AGENTS.md`](AGENTS.md) for the working agreement.
 
 ## Contributing
 
@@ -46,4 +76,4 @@ cd cmdtab
 
 ## License
 
-TODO — add a license before the first public release.
+TODO — a license will be added before the first public release.
