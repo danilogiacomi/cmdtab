@@ -24,7 +24,9 @@ cp "$ROOT/Scripts/CmdTab-Info.plist" "$APP/Contents/Info.plist"
 # does NOT persist — every code change yields a new cdhash and macOS re-prompts.
 # Create the identity once with ./Scripts/make-signing-cert.sh
 IDENTITY="${CMDTAB_SIGN_IDENTITY:-CmdTab Self-Signed}"
-if security find-identity -v -p codesigning 2>/dev/null | grep -q "$IDENTITY"; then
+# Note: -v (valid-only) is intentionally omitted — a self-signed cert is
+# untrusted (CSSMERR_TP_NOT_TRUSTED) yet signs fine, which is all we need.
+if security find-identity -p codesigning 2>/dev/null | grep -q "$IDENTITY"; then
   codesign --force --deep --sign "$IDENTITY" "$APP"
   echo "Signed with '$IDENTITY'."
 else

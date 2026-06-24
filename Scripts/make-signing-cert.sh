@@ -10,7 +10,8 @@ set -euo pipefail
 NAME="CmdTab Self-Signed"
 KEYCHAIN="$HOME/Library/Keychains/login.keychain-db"
 
-if security find-identity -v -p codesigning 2>/dev/null | grep -q "$NAME"; then
+# -v (valid-only) omitted on purpose: a self-signed cert is untrusted but signs.
+if security find-identity -p codesigning 2>/dev/null | grep -q "$NAME"; then
   echo "Signing identity '$NAME' already exists — nothing to do."
   exit 0
 fi
@@ -26,7 +27,14 @@ openssl req -x509 -newkey rsa:2048 -nodes -days 3650 \
   -addext "keyUsage=critical,digitalSignature" \
   -addext "extendedKeyUsage=critical,codeSigning" >/dev/null 2>&1
 
-openssl pkcs12 -export -out "$TMP/identity.p12" \
+# OpenSSL 3 defaults to AES-256/SHA-256 PKCS#12, which macOS `security import`
+# cannot MAC-verify ("MAC verification failed"). Use -legacy (3DES/RC2/SHA1)
+# when supported so the keychain can read it; older openssl/LibreSSL omit it.
+LEGACY=""
+if openssl pkcs12 -export -help 2>&1 | grep -q -- "-legacy"; then
+  LEGACY="-legacy"
+fi
+openssl pkcs12 -export $LEGACY -out "$TMP/identity.p12" \
   -inkey "$TMP/key.pem" -in "$TMP/cert.pem" \
   -name "$NAME" -passout pass:cmdtab >/dev/null 2>&1
 
@@ -40,8 +48,8 @@ security set-key-partition-list -S apple-tool:,apple: "$KEYCHAIN" >/dev/null 2>&
   echo "note: could not set key partition list automatically; codesign may prompt once (click 'Always Allow')."
 
 echo
-if security find-identity -v -p codesigning | grep -q "$NAME"; then
-  echo "Created signing identity '$NAME'."
+if security find-identity -p codesigning | grep -q "$NAME"; then
+  echo "Created signing identity '$NAME' (shows as untrusted — that's fine for signing)."
   echo "Next: clear stale permission entries and re-grant once —"
   echo "  tccutil reset Accessibility com.local.cmdtab"
   echo "  tccutil reset ListenEvent  com.local.cmdtab"
