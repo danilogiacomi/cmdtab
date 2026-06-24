@@ -9,6 +9,7 @@ final class CGEventTapHotkeyMonitor: HotkeyMonitoring {
 
     private var tap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
+    private var startRunLoop: CFRunLoop?
     private var commandDown = false
     private var active = false   // overlay currently showing
 
@@ -35,15 +36,20 @@ final class CGEventTapHotkeyMonitor: HotkeyMonitoring {
         self.tap = tap
         let src = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
         runLoopSource = src
-        CFRunLoopAddSource(CFRunLoopGetCurrent(), src, .commonModes)
+        let runLoop = CFRunLoopGetCurrent()
+        startRunLoop = runLoop
+        CFRunLoopAddSource(runLoop, src, .commonModes)
         CGEvent.tapEnable(tap: tap, enable: true)
     }
 
     func stop() {
         if let tap { CGEvent.tapEnable(tap: tap, enable: false) }
-        if let src = runLoopSource { CFRunLoopRemoveSource(CFRunLoopGetCurrent(), src, .commonModes) }
+        if let runLoop = startRunLoop, let src = runLoopSource {
+            CFRunLoopRemoveSource(runLoop, src, .commonModes)
+        }
         tap = nil
         runLoopSource = nil
+        startRunLoop = nil
         active = false
         commandDown = false
     }
