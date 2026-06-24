@@ -17,16 +17,12 @@ jobs:
       #   with: { xcode-version: latest-stable }
 
       - name: Build
-        run: |
-          # TODO: replace with the real build command once a manifest exists.
-          echo "TODO: swift build  (or: xcodebuild -scheme CmdTab build)"
+        run: swift build
 
       - name: Test
-        run: |
-          # TODO: replace with the real test command.
-          echo "TODO: swift test  (or: xcodebuild -scheme CmdTab test -destination 'platform=macOS')"
+        run: swift test
 
       - name: Lint
         run: |
-          # TODO: install + run swiftlint / swift-format.
-          echo "TODO: swiftlint && swift format lint --recursive Sources"
+          brew install swift-format
+          swift format lint --recursive Sources

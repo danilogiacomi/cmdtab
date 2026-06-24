@@ -16,25 +16,12 @@ desktop, rather than the default macOS app switcher.
 
 ## Build · Test · Lint
 
-These are placeholders until the toolchain is chosen. Update them in the same commit
-that introduces the manifest.
-
 ```bash
-# Build            (TODO: confirm once Package.swift / .xcodeproj exists)
-swift build                     # SwiftPM
-# xcodebuild -scheme CmdTab build   # Xcode project alternative
-
-# Test             (TODO)
-swift test
-# xcodebuild -scheme CmdTab test -destination 'platform=macOS'
-
-# Lint / format    (TODO: install swiftlint + swift-format)
-swiftlint
-swift format lint --recursive Sources
+swift build            # build all targets
+swift test             # run the CmdTabCore unit tests
+./Scripts/bundle.sh    # assemble CmdTab.app (added in Task 5)
+swift format lint --recursive Sources   # lint (requires swift-format)
 ```
-
-Keep this section honest: if a command is not wired up yet, leave it marked `TODO`
-rather than documenting an invented command.
 
 ## Code style
 
