@@ -74,6 +74,31 @@ verified and [`AGENTS.md`](AGENTS.md) for the working agreement.
 - Never commit secrets; copy `.env.example` to `.env` for local config.
 - Agent execution / sandbox policy: [`docs/agent-execution.md`](docs/agent-execution.md).
 
+## Built with Claude Code
+
+Every line of CmdTab — code, tests, and docs — was written with
+[Claude Code](https://claude.com/claude-code). Here's what that took, end to end:
+
+```
+        ┌─────────────────────────────────────────────────┐
+        │  Tokens used                            142.8M  │
+        │    ├─ input                             154.9K  │
+        │    ├─ output                            917.6K  │
+        │    ├─ cache write                         4.1M  │
+        │    └─ cache read                        137.6M  │
+        │                                                 │
+        │  Sessions                                    4  │
+        │                                                 │
+        │  Models      Opus 4.8 · Sonnet 4.6 · Haiku 4.5  │
+        └─────────────────────────────────────────────────┘
+            measured with ccusage · snapshot 2026-06-24
+```
+
+The bulk is cache reads — cheap, repeated context the agent re-loads each turn —
+so the headline token count is far larger than the work actually required. Numbers
+come from [`ccusage`](https://github.com/ryoppippi/ccusage) and are a snapshot, not a
+live counter.
+
 ## License
 
 Released under the [MIT License](LICENSE).
