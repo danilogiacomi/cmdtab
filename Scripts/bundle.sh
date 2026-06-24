@@ -5,8 +5,13 @@ CONFIG="${1:-release}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 APP="$ROOT/build/CmdTab.app"
 
-swift build -c "$CONFIG"
+swift build -c "$CONFIG" --product CmdTabApp
 BIN="$ROOT/.build/$CONFIG/CmdTabApp"
+
+if [ ! -f "$BIN" ]; then
+  echo "error: built binary not found at $BIN" >&2
+  exit 1
+fi
 
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS"
