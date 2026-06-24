@@ -1,6 +1,11 @@
 import AppKit
 import CmdTabCore
 
+/// Flipped so the vertical stack lays out top-to-bottom inside the scroll view.
+private final class FlippedStackView: NSStackView {
+    override var isFlipped: Bool { true }
+}
+
 final class SwitcherOverlay {
     var onHover: ((Int) -> Void)?
     var onClick: ((Int) -> Void)?
@@ -8,16 +13,22 @@ final class SwitcherOverlay {
     private var panel: NSPanel?
     private var rows: [OverlayRowView] = []
 
+    private let rowHeight: CGFloat = 44
+    private let width: CGFloat = 520
+    private let margin: CGFloat = 8
+
     func show(_ windows: [WindowInfo], selected: Int) {
         hide()
         guard !windows.isEmpty else { return }
 
-        let rowHeight: CGFloat = 44
-        let width: CGFloat = 520
-        let height = CGFloat(windows.count) * rowHeight + 16
+        // Clamp the panel to the screen so a long list never overflows; the rows
+        // live in a scroll view, so overflow scrolls instead of growing.
+        let naturalHeight = CGFloat(windows.count) * rowHeight + margin * 2
+        let screenHeight = NSScreen.main?.visibleFrame.height ?? 900
+        let panelHeight = min(naturalHeight, screenHeight - 80)
 
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: width, height: height),
+            contentRect: NSRect(x: 0, y: 0, width: width, height: panelHeight),
             styleMask: [.nonactivatingPanel, .borderless],
             backing: .buffered,
             defer: false
@@ -38,16 +49,30 @@ final class SwitcherOverlay {
         bg.layer?.cornerRadius = 12
         content.addSubview(bg)
 
-        let stack = NSStackView()
+        let scroll = NSScrollView()
+        scroll.translatesAutoresizingMaskIntoConstraints = false
+        scroll.drawsBackground = false
+        scroll.hasVerticalScroller = true
+        scroll.scrollerStyle = .overlay
+        scroll.automaticallyAdjustsContentInsets = false
+        bg.addSubview(scroll)
+        NSLayoutConstraint.activate([
+            scroll.leadingAnchor.constraint(equalTo: bg.leadingAnchor, constant: margin),
+            scroll.trailingAnchor.constraint(equalTo: bg.trailingAnchor, constant: -margin),
+            scroll.topAnchor.constraint(equalTo: bg.topAnchor, constant: margin),
+            scroll.bottomAnchor.constraint(equalTo: bg.bottomAnchor, constant: -margin),
+        ])
+
+        let stack = FlippedStackView()
         stack.orientation = .vertical
         stack.spacing = 0
         stack.translatesAutoresizingMaskIntoConstraints = false
-        bg.addSubview(stack)
+        scroll.documentView = stack
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: bg.leadingAnchor, constant: 8),
-            stack.trailingAnchor.constraint(equalTo: bg.trailingAnchor, constant: -8),
-            stack.topAnchor.constraint(equalTo: bg.topAnchor, constant: 8),
-            stack.bottomAnchor.constraint(equalTo: bg.bottomAnchor, constant: -8),
+            stack.topAnchor.constraint(equalTo: scroll.contentView.topAnchor),
+            stack.leadingAnchor.constraint(equalTo: scroll.contentView.leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: scroll.contentView.trailingAnchor),
+            stack.widthAnchor.constraint(equalTo: scroll.contentView.widthAnchor),
         ])
 
         rows = windows.enumerated().map { idx, win in
@@ -64,7 +89,7 @@ final class SwitcherOverlay {
 
         if let screen = NSScreen.main {
             let f = screen.frame
-            panel.setFrameOrigin(NSPoint(x: f.midX - width / 2, y: f.midY - height / 2))
+            panel.setFrameOrigin(NSPoint(x: f.midX - width / 2, y: f.midY - panelHeight / 2))
         }
         panel.orderFrontRegardless()
         self.panel = panel
@@ -73,6 +98,9 @@ final class SwitcherOverlay {
 
     func highlight(_ index: Int) {
         for (i, row) in rows.enumerated() { row.setSelected(i == index) }
+        if rows.indices.contains(index) {
+            rows[index].scrollToVisible(rows[index].bounds)
+        }
     }
 
     func hide() {

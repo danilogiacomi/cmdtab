@@ -4,6 +4,17 @@ import ApplicationServices
 import CGSPrivate
 import CmdTabCore
 
+/// Enumerates real, switchable windows via the Accessibility API — one entry per
+/// window, deduplicated by `CGWindowID`.
+///
+/// We use AX (`kAXWindowsAttribute`) rather than `CGWindowListCopyWindowInfo`
+/// because CGWindowList's layer-0 set is full of non-window helper surfaces
+/// (toolbar strips, UI-service overlays) and its titles are empty without
+/// Screen Recording permission — both of which made the list show apparent
+/// duplicates. AX returns each app's actual windows (across Spaces, including
+/// minimized) with real titles, using only the Accessibility access we already
+/// require. `_AXUIElementGetWindow` maps each AX window to its `CGWindowID` so
+/// the rest of the app (MRU, activation) keys on a stable identity.
 final class SystemWindowEnumerator: WindowEnumerating {
     /// Our own process ID, so we never list CmdTab's own windows.
     private let ownPID = ProcessInfo.processInfo.processIdentifier
@@ -12,49 +23,10 @@ final class SystemWindowEnumerator: WindowEnumerating {
         var result: [WindowInfo] = []
         var seen = Set<CGWindowID>()
 
-        result.append(contentsOf: cgWindowListWindows(seen: &seen))
-        result.append(contentsOf: minimizedWindows(seen: &seen))
-        return result
-    }
-
-    // MARK: CGWindowList (normal + off-screen across all Spaces)
-
-    private func cgWindowListWindows(seen: inout Set<CGWindowID>) -> [WindowInfo] {
-        let options: CGWindowListOption = [.optionAll, .excludeDesktopElements]
-        guard let raw = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else {
-            return []
-        }
-        var out: [WindowInfo] = []
-        for dict in raw {
-            guard
-                let layer = dict[kCGWindowLayer as String] as? Int, layer == 0,
-                let wid = dict[kCGWindowNumber as String] as? CGWindowID,
-                let pid = dict[kCGWindowOwnerPID as String] as? pid_t,
-                pid != ownPID
-            else { continue }
-
-            // Require a real, on-app window: must have an owner name; skip
-            // zero-area utility surfaces.
-            let appName = (dict[kCGWindowOwnerName as String] as? String) ?? ""
-            if appName.isEmpty { continue }
-            if let bounds = dict[kCGWindowBounds as String] as? [String: CGFloat],
-               (bounds["Width"] ?? 0) < 40 && (bounds["Height"] ?? 0) < 40 { continue }
-
-            guard !seen.contains(wid) else { continue }
-            seen.insert(wid)
-            let title = (dict[kCGWindowName as String] as? String) ?? ""
-            out.append(WindowInfo(id: wid, pid: pid, appName: appName, title: title, isMinimized: false))
-        }
-        return out
-    }
-
-    // MARK: Accessibility (minimized windows, which CGWindowList omits)
-
-    private func minimizedWindows(seen: inout Set<CGWindowID>) -> [WindowInfo] {
-        var out: [WindowInfo] = []
         for app in NSWorkspace.shared.runningApplications
         where app.activationPolicy == .regular && app.processIdentifier != ownPID {
             let pid = app.processIdentifier
+            let appName = app.localizedName ?? ""
             let appElement = AXUIElementCreateApplication(pid)
 
             var windowsValue: CFTypeRef?
@@ -62,20 +34,33 @@ final class SystemWindowEnumerator: WindowEnumerating {
                   let axWindows = windowsValue as? [AXUIElement] else { continue }
 
             for axWindow in axWindows {
-                guard isMinimized(axWindow) else { continue }
+                guard isSwitchableWindow(axWindow) else { continue }
                 var wid = CGWindowID(0)
-                guard _AXUIElementGetWindow(axWindow, &wid) == .success, !seen.contains(wid) else { continue }
+                guard _AXUIElementGetWindow(axWindow, &wid) == .success, wid != 0, !seen.contains(wid) else { continue }
                 seen.insert(wid)
-                out.append(WindowInfo(
+                result.append(WindowInfo(
                     id: wid,
                     pid: pid,
-                    appName: app.localizedName ?? "",
+                    appName: appName,
                     title: axTitle(axWindow),
-                    isMinimized: true
+                    isMinimized: isMinimized(axWindow)
                 ))
             }
         }
-        return out
+        return result
+    }
+
+    /// A real, user-switchable window: reports the window role, and (if it
+    /// declares a subrole) is a standard window or dialog — not a palette,
+    /// popover, or other auxiliary surface. Windows without a subrole are kept.
+    private func isSwitchableWindow(_ element: AXUIElement) -> Bool {
+        guard axString(element, kAXRoleAttribute as CFString) == (kAXWindowRole as String) else { return false }
+        guard let subrole = axString(element, kAXSubroleAttribute as CFString), !subrole.isEmpty else {
+            return true
+        }
+        return subrole == (kAXStandardWindowSubrole as String)
+            || subrole == (kAXDialogSubrole as String)
+            || subrole == (kAXSystemDialogSubrole as String)
     }
 
     private func isMinimized(_ element: AXUIElement) -> Bool {
@@ -86,9 +71,12 @@ final class SystemWindowEnumerator: WindowEnumerating {
     }
 
     private func axTitle(_ element: AXUIElement) -> String {
+        axString(element, kAXTitleAttribute as CFString) ?? ""
+    }
+
+    private func axString(_ element: AXUIElement, _ attribute: CFString) -> String? {
         var value: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(element, kAXTitleAttribute as CFString, &value) == .success
-        else { return "" }
-        return (value as? String) ?? ""
+        guard AXUIElementCopyAttributeValue(element, attribute, &value) == .success else { return nil }
+        return value as? String
     }
 }
