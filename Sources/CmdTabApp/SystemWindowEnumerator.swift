@@ -5,7 +5,7 @@ import CGSPrivate
 import CmdTabCore
 
 final class SystemWindowEnumerator: WindowEnumerating {
-    /// Our own bundle id, so we never list CmdTab's overlay.
+    /// Our own process ID, so we never list CmdTab's own windows.
     private let ownPID = ProcessInfo.processInfo.processIdentifier
 
     func snapshot() -> [WindowInfo] {
@@ -38,7 +38,7 @@ final class SystemWindowEnumerator: WindowEnumerating {
             let appName = (dict[kCGWindowOwnerName as String] as? String) ?? ""
             if appName.isEmpty { continue }
             if let bounds = dict[kCGWindowBounds as String] as? [String: CGFloat],
-               (bounds["Width"] ?? 0) < 40 || (bounds["Height"] ?? 0) < 40 { continue }
+               (bounds["Width"] ?? 0) < 40 && (bounds["Height"] ?? 0) < 40 { continue }
 
             guard !seen.contains(wid) else { continue }
             seen.insert(wid)

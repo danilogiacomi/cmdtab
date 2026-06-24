@@ -1,4 +1,6 @@
 import AppKit
+import ApplicationServices
+import CGSPrivate
 import CmdTabCore
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -43,9 +45,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 let self,
                 let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
             else { return }
-            // Record the app's frontmost matching window as most-recently-used.
-            if let top = self.enumerator.snapshot().first(where: { $0.pid == app.processIdentifier }) {
-                self.mru.recordFocus(top.id)
+            // Record the app's AX-focused window as most-recently-used.
+            if let wid = self.focusedWindowID(pid: app.processIdentifier) {
+                self.mru.recordFocus(wid)
             }
         }
     }
@@ -86,6 +88,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         } catch {
             NSLog("CmdTab: event tap failed — enable Input Monitoring for CmdTab. \(error)")
         }
+    }
+
+    /// The CGWindowID of the given app's currently-focused AX window, if available.
+    private func focusedWindowID(pid: pid_t) -> CGWindowID? {
+        let appElement = AXUIElementCreateApplication(pid)
+        var focused: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(appElement, kAXFocusedWindowAttribute as CFString, &focused) == .success,
+              let focusedValue = focused,
+              CFGetTypeID(focusedValue) == AXUIElementGetTypeID() else { return nil }
+        let axWindow = focusedValue as! AXUIElement
+        var wid = CGWindowID(0)
+        guard _AXUIElementGetWindow(axWindow, &wid) == .success else { return nil }
+        return wid
     }
 
     @objc private func quit() {
