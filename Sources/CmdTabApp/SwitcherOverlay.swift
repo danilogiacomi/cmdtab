@@ -123,9 +123,11 @@ final class SwitcherOverlay {
 
     func highlight(_ index: Int) {
         for (i, row) in rows.enumerated() { row.setSelected(i == index) }
-        if rows.indices.contains(index) {
-            rows[index].scrollToVisible(rows[index].bounds)
-        }
+        guard rows.indices.contains(index) else { return }
+        // Defer the scroll out of the current layout pass; calling scrollToVisible
+        // while the panel is still laying out triggers _NSDetectedLayoutRecursion.
+        let target = rows[index]
+        DispatchQueue.main.async { target.scrollToVisible(target.bounds) }
     }
 
     func hide() {
