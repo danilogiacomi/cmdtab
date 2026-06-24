@@ -43,7 +43,11 @@ final class SystemWindowEnumerator: WindowEnumerating {
                     pid: pid,
                     appName: appName,
                     title: axTitle(axWindow),
-                    isMinimized: isMinimized(axWindow)
+                    isMinimized: isMinimized(axWindow),
+                    isFullScreen: isFullScreen(axWindow),
+                    // App-scoped: macOS hides whole apps (Cmd+H), not individual
+                    // windows, so every window of a hidden app reports isHidden.
+                    isHidden: app.isHidden
                 ))
             }
         }
@@ -66,6 +70,13 @@ final class SystemWindowEnumerator: WindowEnumerating {
     private func isMinimized(_ element: AXUIElement) -> Bool {
         var value: CFTypeRef?
         guard AXUIElementCopyAttributeValue(element, kAXMinimizedAttribute as CFString, &value) == .success
+        else { return false }
+        return (value as? Bool) == true
+    }
+
+    private func isFullScreen(_ element: AXUIElement) -> Bool {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(element, "AXFullScreen" as CFString, &value) == .success
         else { return false }
         return (value as? Bool) == true
     }

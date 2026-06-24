@@ -10,4 +10,19 @@ final class WindowInfoTests: XCTestCase {
         XCTAssertEqual(a, b)
         XCTAssertNotEqual(a, c)
     }
+
+    func testStateFlagsDefaultFalseAndStore() {
+        let plain = WindowInfo(id: 1, pid: 10, appName: "Safari", title: "Inbox", isMinimized: false)
+        XCTAssertFalse(plain.isFullScreen)
+        XCTAssertFalse(plain.isHidden)
+
+        let flagged = WindowInfo(
+            id: 2, pid: 10, appName: "Safari", title: "Inbox",
+            isMinimized: true, isFullScreen: true, isHidden: true
+        )
+        XCTAssertTrue(flagged.isMinimized)
+        XCTAssertTrue(flagged.isFullScreen)
+        XCTAssertTrue(flagged.isHidden)
+        XCTAssertNotEqual(plain, flagged)
+    }
 }
