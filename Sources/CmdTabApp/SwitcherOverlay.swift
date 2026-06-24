@@ -13,6 +13,12 @@ final class SwitcherOverlay {
     private var panel: NSPanel?
     private var rows: [OverlayRowView] = []
 
+    /// The overlay appears under wherever the cursor happens to be resting, so
+    /// we ignore mouse hover until the user actually moves the mouse (or clicks).
+    /// This keeps a stationary cursor from hijacking the keyboard selection.
+    private var mouseEngaged = false
+    private var mouseMonitor: Any?
+
     private let rowHeight: CGFloat = 44
     private let width: CGFloat = 520
     private let margin: CGFloat = 8
@@ -20,6 +26,12 @@ final class SwitcherOverlay {
     func show(_ windows: [WindowInfo], selected: Int) {
         hide()
         guard !windows.isEmpty else { return }
+
+        // Start with the mouse disengaged; the first real movement turns it on.
+        mouseEngaged = false
+        mouseMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.mouseMoved, .leftMouseDragged, .rightMouseDragged]
+        ) { [weak self] _ in self?.engageMouse() }
 
         // Clamp the panel to the screen so a long list never overflows; the rows
         // live in a scroll view, so overflow scrolls instead of growing.
@@ -79,8 +91,15 @@ final class SwitcherOverlay {
             let icon = NSRunningApplication(processIdentifier: win.pid)?.icon
             let row = OverlayRowView(index: idx, icon: icon, appName: win.appName, title: win.title)
             row.translatesAutoresizingMaskIntoConstraints = false
-            row.onHover = { [weak self] in self?.onHover?($0) }
-            row.onClick = { [weak self] in self?.onClick?($0) }
+            row.onHover = { [weak self] index in
+                guard let self, self.mouseEngaged else { return }
+                self.onHover?(index)
+            }
+            row.onClick = { [weak self] index in
+                guard let self else { return }
+                self.engageMouse()   // a deliberate click counts as engaging the mouse
+                self.onClick?(index)
+            }
             stack.addArrangedSubview(row)
             row.heightAnchor.constraint(equalToConstant: rowHeight).isActive = true
             row.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
@@ -104,8 +123,23 @@ final class SwitcherOverlay {
     }
 
     func hide() {
+        if let mouseMonitor {
+            NSEvent.removeMonitor(mouseMonitor)
+            self.mouseMonitor = nil
+        }
+        mouseEngaged = false
         panel?.orderOut(nil)
         panel = nil
         rows = []
+    }
+
+    /// Begin honoring mouse hover; called on the first real mouse movement (or a
+    /// click). Removes the movement monitor once engaged.
+    private func engageMouse() {
+        mouseEngaged = true
+        if let mouseMonitor {
+            NSEvent.removeMonitor(mouseMonitor)
+            self.mouseMonitor = nil
+        }
     }
 }
