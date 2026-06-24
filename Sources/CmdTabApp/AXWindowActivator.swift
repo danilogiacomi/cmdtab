@@ -11,7 +11,7 @@ final class AXWindowActivator: WindowActivating {
             AXUIElementPerformAction(axWindow, kAXRaiseAction as CFString)
         }
         NSRunningApplication(processIdentifier: window.pid)?
-            .activate(options: [.activateIgnoringOtherApps])
+            .activate()
     }
 
     private func axWindow(pid: pid_t, windowID: CGWindowID) -> AXUIElement? {
