@@ -23,17 +23,26 @@ cp "$ROOT/Scripts/CmdTab-Info.plist" "$APP/Contents/Info.plist"
 # grant on the signing certificate, not the per-build cdhash). Ad-hoc signing
 # does NOT persist — every code change yields a new cdhash and macOS re-prompts.
 # Create the identity once with ./Scripts/make-signing-cert.sh
+#
+# Sign by the certificate's SHA-1 hash (not its name): names can collide, and a
+# duplicate makes `codesign --sign <name>` fail with "ambiguous". -v (valid-only)
+# is omitted on purpose — a self-signed cert is untrusted yet signs fine.
 IDENTITY="${CMDTAB_SIGN_IDENTITY:-CmdTab Self-Signed}"
-# Note: -v (valid-only) is intentionally omitted — a self-signed cert is
-# untrusted (CSSMERR_TP_NOT_TRUSTED) yet signs fine, which is all we need.
-if security find-identity -p codesigning 2>/dev/null | grep -q "$IDENTITY"; then
-  codesign --force --deep --sign "$IDENTITY" "$APP"
-  echo "Signed with '$IDENTITY'."
-else
+HASHES="$(security find-identity -p codesigning 2>/dev/null | awk -v n="$IDENTITY" 'index($0, n) {print $2}')"
+COUNT="$(printf '%s\n' "$HASHES" | grep -c . || true)"
+
+if [ "$COUNT" -eq 1 ]; then
+  codesign --force --deep --sign "$HASHES" "$APP"
+  echo "Signed with '$IDENTITY' ($HASHES)."
+elif [ "$COUNT" -eq 0 ]; then
   codesign --force --deep --sign - "$APP"
   echo "warning: signing identity '$IDENTITY' not found — used ad-hoc signing." >&2
   echo "         Accessibility permission will NOT persist across code changes." >&2
   echo "         Run ./Scripts/make-signing-cert.sh once to fix this." >&2
+else
+  echo "error: $COUNT certificates named '$IDENTITY' in the keychain (ambiguous)." >&2
+  echo "       Run ./Scripts/make-signing-cert.sh to collapse them to one." >&2
+  exit 1
 fi
 
 echo "Built $APP"

@@ -1,19 +1,35 @@
 #!/usr/bin/env bash
-# Creates a stable self-signed code-signing identity named "CmdTab Self-Signed"
-# in the login keychain, so the macOS Accessibility / Input Monitoring grant
-# persists across rebuilds. Run this ONCE. Safe to re-run (no-op if it exists).
-#
-# Why: ad-hoc signing keys the TCC permission to the per-build cdhash, so every
-# code change re-prompts. A stable certificate keys it to the cert + bundle id.
+# Ensures EXACTLY ONE stable self-signed code-signing identity named
+# "CmdTab Self-Signed" in the login keychain, so the macOS Accessibility /
+# Input Monitoring grant persists across rebuilds (TCC keys the grant on the
+# signing certificate, not the per-build cdhash). Safe to re-run: it collapses
+# any duplicate certs down to a single one.
 set -euo pipefail
 
 NAME="CmdTab Self-Signed"
 KEYCHAIN="$HOME/Library/Keychains/login.keychain-db"
 
-# -v (valid-only) omitted on purpose: a self-signed cert is untrusted but signs.
-if security find-identity -p codesigning 2>/dev/null | grep -q "$NAME"; then
-  echo "Signing identity '$NAME' already exists — nothing to do."
+# SHA-1 hashes of every code-signing identity matching NAME (untrusted is fine).
+matching_hashes() {
+  security find-identity -p codesigning 2>/dev/null | awk -v n="$NAME" 'index($0, n) {print $2}'
+}
+
+hashes="$(matching_hashes || true)"
+count="$(printf '%s\n' "$hashes" | grep -c . || true)"
+
+if [ "$count" -eq 1 ]; then
+  echo "Signing identity '$NAME' already exists (single, clean) — nothing to do."
   exit 0
+fi
+
+if [ "$count" -gt 1 ]; then
+  echo "Found $count duplicate '$NAME' certificates — removing all to start clean…"
+  while IFS= read -r h; do
+    [ -n "$h" ] || continue
+    security delete-certificate -Z "$h" "$KEYCHAIN" >/dev/null 2>&1 || true
+  done <<EOF
+$hashes
+EOF
 fi
 
 TMP="$(mktemp -d)"
@@ -38,25 +54,25 @@ openssl pkcs12 -export $LEGACY -out "$TMP/identity.p12" \
   -inkey "$TMP/key.pem" -in "$TMP/cert.pem" \
   -name "$NAME" -passout pass:cmdtab >/dev/null 2>&1
 
-# Import into the login keychain and allow codesign to use the key.
 security import "$TMP/identity.p12" -k "$KEYCHAIN" -P cmdtab \
   -T /usr/bin/codesign -T /usr/bin/security
 
-# Allow apple tools (codesign) to use the private key without a GUI prompt each
-# build. This may ask for your login keychain password once.
+# Let codesign use the private key without a GUI prompt on every build.
+# Prompts once for your login keychain password.
 security set-key-partition-list -S apple-tool:,apple: "$KEYCHAIN" >/dev/null 2>&1 || \
-  echo "note: could not set key partition list automatically; codesign may prompt once (click 'Always Allow')."
+  echo "note: could not set key partition list; codesign may prompt once (click 'Always Allow')."
 
 echo
-if security find-identity -p codesigning | grep -q "$NAME"; then
-  echo "Created signing identity '$NAME' (shows as untrusted — that's fine for signing)."
+final="$(matching_hashes || true)"
+fcount="$(printf '%s\n' "$final" | grep -c . || true)"
+if [ "$fcount" -eq 1 ]; then
+  echo "Created a single signing identity '$NAME' (shows as untrusted — fine for signing)."
   echo "Next: clear stale permission entries and re-grant once —"
   echo "  tccutil reset Accessibility com.local.cmdtab"
   echo "  tccutil reset ListenEvent  com.local.cmdtab"
   echo "  ./Scripts/bundle.sh debug && open build/CmdTab.app"
 else
-  echo "warning: identity not found after import."
-  echo "Fallback — create it via Keychain Access:"
+  echo "warning: expected 1 identity but found $fcount. Fallback — create via Keychain Access:"
   echo "  Keychain Access → Certificate Assistant → Create a Certificate…"
   echo "  Name: $NAME | Identity Type: Self Signed Root | Certificate Type: Code Signing"
   exit 1
