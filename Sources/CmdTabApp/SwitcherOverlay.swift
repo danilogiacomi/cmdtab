@@ -19,9 +19,9 @@ final class SwitcherOverlay {
     private var mouseEngaged = false
     private var mouseMonitor: Any?
 
-    private let rowHeight: CGFloat = 44
+    private let rowHeight: CGFloat = 50
     private let width: CGFloat = 520
-    private let margin: CGFloat = 8
+    private let margin: CGFloat = 4
 
     func show(_ windows: [WindowInfo], selected: Int) {
         hide()
@@ -33,11 +33,15 @@ final class SwitcherOverlay {
             matching: [.mouseMoved, .leftMouseDragged, .rightMouseDragged]
         ) { [weak self] _ in self?.engageMouse() }
 
-        // Clamp the panel to the screen so a long list never overflows; the rows
-        // live in a scroll view, so overflow scrolls instead of growing.
+        // Appear on the screen the mouse is on (not the focused window's screen).
+        let targetScreen = screenUnderMouse()
+        let full = targetScreen?.frame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
+        let visible = targetScreen?.visibleFrame ?? full
+
+        // Clamp the panel to the usable area so a long list never overflows; the
+        // rows live in a scroll view, so overflow scrolls instead of growing.
         let naturalHeight = CGFloat(windows.count) * rowHeight + margin * 2
-        let screenHeight = NSScreen.main?.visibleFrame.height ?? 900
-        let panelHeight = min(naturalHeight, screenHeight - 80)
+        let panelHeight = min(naturalHeight, visible.height - 80)
 
         let panel = NSPanel(
             contentRect: NSRect(x: 0, y: 0, width: width, height: panelHeight),
@@ -106,10 +110,12 @@ final class SwitcherOverlay {
             return row
         }
 
-        if let screen = NSScreen.main {
-            let f = screen.frame
-            panel.setFrameOrigin(NSPoint(x: f.midX - width / 2, y: f.midY - panelHeight / 2))
-        }
+        // Center on the full screen (geometric center), not the visible frame,
+        // so the menu bar / Dock don't push it off-center.
+        panel.setFrameOrigin(NSPoint(
+            x: full.midX - width / 2,
+            y: full.midY - panelHeight / 2
+        ))
         panel.orderFrontRegardless()
         self.panel = panel
         highlight(selected)
@@ -131,6 +137,13 @@ final class SwitcherOverlay {
         panel?.orderOut(nil)
         panel = nil
         rows = []
+    }
+
+    /// The screen the mouse cursor is currently on, so the overlay appears where
+    /// the user is looking rather than on the focused window's display.
+    private func screenUnderMouse() -> NSScreen? {
+        let location = NSEvent.mouseLocation
+        return NSScreen.screens.first { $0.frame.contains(location) } ?? NSScreen.main
     }
 
     /// Begin honoring mouse hover; called on the first real mouse movement (or a
