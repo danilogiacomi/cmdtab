@@ -77,6 +77,9 @@ final class SwitcherOverlay {
             scroll.trailingAnchor.constraint(equalTo: bg.trailingAnchor, constant: -margin),
             scroll.topAnchor.constraint(equalTo: bg.topAnchor, constant: margin),
             scroll.bottomAnchor.constraint(equalTo: bg.bottomAnchor, constant: -margin),
+            // Hard width cap: without it, a long window title forces the whole
+            // panel to grow (and shift off-center). The title truncates instead.
+            scroll.widthAnchor.constraint(equalToConstant: width - margin * 2),
         ])
 
         let stack = FlippedStackView()

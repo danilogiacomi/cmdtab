@@ -20,6 +20,8 @@ final class OverlayRowView: NSView {
         let shown = title.isEmpty ? appName : "\(appName) — \(title)"
         titleLabel.stringValue = shown
         titleLabel.lineBreakMode = .byTruncatingTail
+        // Yield rather than force the row (and panel) wider for long titles.
+        titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         titleLabel.font = .systemFont(ofSize: 16)
         titleLabel.textColor = .labelColor
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
