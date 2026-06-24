@@ -1,5 +1,7 @@
 import AppKit
-import CmdTabCore
 
-print("CmdTab \(CmdTabCore.version) starting")
-// Real app bootstrap is added in Task 5.
+let app = NSApplication.shared
+let delegate = AppDelegate()
+app.delegate = delegate
+app.setActivationPolicy(.accessory)   // no Dock icon (agent app)
+app.run()
