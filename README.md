@@ -76,4 +76,4 @@ verified and [`AGENTS.md`](AGENTS.md) for the working agreement.
 
 ## License
 
-TODO — a license will be added before the first public release.
+Released under the [MIT License](LICENSE).
