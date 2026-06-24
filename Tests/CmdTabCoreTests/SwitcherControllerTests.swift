@@ -98,4 +98,51 @@ final class SwitcherControllerTests: XCTestCase {
         c.setSelection(2)
         XCTAssertEqual(c.selectedIndex, 2)
     }
+
+    func testOnShowFiresWithWindowsAndSelection() {
+        let (c, _) = makeController([1, 2, 3])
+        var capturedWindows: [WindowInfo]?
+        var capturedIndex: Int?
+        c.onShow = { windows, index in
+            capturedWindows = windows
+            capturedIndex = index
+        }
+        c.handle(.show)
+        XCTAssertEqual(capturedWindows?.count, 3)
+        XCTAssertEqual(capturedIndex, 1)
+        XCTAssertEqual(c.windows[1].id, 2)
+    }
+
+    func testOnSelectionChangeFiresOnNext() {
+        let (c, _) = makeController([1, 2, 3])
+        var capturedIndex: Int?
+        c.onSelectionChange = { index in
+            capturedIndex = index
+        }
+        c.handle(.show)
+        c.handle(.next)
+        XCTAssertEqual(capturedIndex, 2)
+    }
+
+    func testOnHideFiresOnCommit() {
+        let (c, _) = makeController([1, 2, 3])
+        var hideFired = false
+        c.onHide = {
+            hideFired = true
+        }
+        c.handle(.show)
+        c.handle(.commit)
+        XCTAssertTrue(hideFired)
+    }
+
+    func testOnHideFiresOnCancel() {
+        let (c, _) = makeController([1, 2, 3])
+        var hideFired = false
+        c.onHide = {
+            hideFired = true
+        }
+        c.handle(.show)
+        c.handle(.cancel)
+        XCTAssertTrue(hideFired)
+    }
 }
