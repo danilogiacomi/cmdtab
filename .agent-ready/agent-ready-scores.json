@@ -1,0 +1,103 @@
+{
+  "schema_version": 2,
+  "project": "CmdTab",
+  "timestamp": "2026-06-22T00:00:00Z",
+  "mode": "greenfield",
+  "declared_agents": ["claude"],
+  "overall_score": 42,
+  "level": "Partially Ready",
+  "layers": {
+    "portable": { "score": 39.1, "max": 94.3 },
+    "target_specific": { "score": 2.7, "max": 5.7, "agents": ["claude"] }
+  },
+  "dimensions": {
+    "agent_instructions_context": {
+      "weight": 18, "raw_score": 90.0, "weighted_score": 16.2,
+      "subcriteria": {
+        "primary_instruction_file": { "score": 100, "weight": 25, "layer": "portable", "evidence": "AGENTS.md present, project-specific (CmdTab/macOS/Swift).", "na": false },
+        "instruction_quality": { "score": 75, "weight": 25, "layer": "portable", "evidence": "Project-specific paths, conventions, safe-to-run/security section; build/test/lint present but templated TODO placeholders.", "na": false, "why": "Value comes from project-specific facts (exact commands, paths, gotchas), not boilerplate.", "consequence": "Placeholder commands force trial-and-error until real ones are wired.", "fixable_by": "partial", "fix_ref": "/agent-ready fix agent_instructions_context", "effort": "Med" },
+        "instruction_conciseness": { "score": 100, "weight": 20, "layer": "portable", "evidence": "70 lines, 0 boilerplate phrases, under 300-line limit (instruction_audit.py).", "na": false },
+        "hierarchical_instructions": { "score": 75, "weight": 15, "layer": "portable", "evidence": "No subpackages yet; single root AGENTS.md is appropriate for current scale.", "na": false, "why": "Scoped per-package files give locally-relevant context in large repos.", "consequence": "N/A until the project grows multiple packages.", "fixable_by": "skill", "fix_ref": "/agent-ready fix agent_instructions_context", "effort": "Med" },
+        "cross_agent_bridge": { "score": 100, "weight": 15, "layer": "target", "evidence": "CLAUDE.md is a symlink to AGENTS.md (single source of truth, no drift).", "na": false }
+      }
+    },
+    "navigability_code_intelligence": {
+      "weight": 18, "raw_score": 58.2, "weighted_score": 10.5,
+      "subcriteria": {
+        "repo_map_availability": { "score": 50, "weight": 20, "layer": "portable", "evidence": "No source yet (repo_map.py: 0 files); a map is cleanly generatable once code lands.", "na": false, "why": "Repo maps cut navigation token cost ~70%.", "consequence": "Once code exists without a map, agents fall back to broad reads.", "fixable_by": "partial", "fix_ref": "/agent-ready fix navigability_code_intelligence", "effort": "Low" },
+        "semantic_nav_amenability": { "score": 50, "weight": 18, "layer": "portable", "evidence": "Swift is LSP-amenable (sourcekit-lsp) but no code/config present yet.", "na": false, "why": "Typed, analyzable code is the precondition for semantic nav (Serena/LSP).", "consequence": "Until code with types exists, semantic tooling has nothing to index.", "fixable_by": "manual", "fix_ref": "Write typed Swift; ensure sourcekit-lsp available.", "effort": "High" },
+        "dependency_structure_clarity": { "score": 25, "weight": 17, "layer": "portable", "evidence": "No manifest yet (no Package.swift/.xcodeproj); only a suggested layout documented.", "na": false, "why": "A derivable dependency graph lets agents reason about blast radius.", "consequence": "No manifest means no module boundaries to reason about.", "fixable_by": "manual", "fix_ref": "Add Package.swift / Xcode project with clear modules.", "effort": "High" },
+        "readme_overview": { "score": 75, "weight": 15, "layer": "portable", "evidence": "README has purpose, goals, requirements, setup (TODO), contributing, structure pointers.", "na": false, "why": "A root overview orients agents before deep work.", "consequence": "Setup is still TODO pending toolchain choice.", "fixable_by": "partial", "fix_ref": "/agent-ready fix navigability_code_intelligence", "effort": "Low" },
+        "machine_readable_contracts": { "score": 0, "weight": 15, "layer": "portable", "evidence": "Not applicable: desktop GUI window-switcher has no API/service boundaries.", "na": true },
+        "file_size_sanity": { "score": 100, "weight": 15, "layer": "portable", "evidence": "0 oversized files; total 350 LOC across docs (file_metrics.py).", "na": false }
+      }
+    },
+    "testing_feedback": {
+      "weight": 16, "raw_score": 5.0, "weighted_score": 0.8,
+      "subcriteria": {
+        "test_suite_present": { "score": 0, "weight": 20, "layer": "portable", "evidence": "No tests found.", "na": false, "why": "Tests are the highest-impact comprehension signal for agents.", "consequence": "Agents cannot verify changes; regressions go undetected.", "fixable_by": "manual", "fix_ref": "Write tests in Tests/ once code exists.", "effort": "High" },
+        "test_commands_documented": { "score": 25, "weight": 20, "layer": "portable", "evidence": "AGENTS.md documents `swift test` as a TODO placeholder; no runner detected (test_commands.py).", "na": false, "why": "Tests only help if the agent can find and run them.", "consequence": "Placeholder command isn't verifiable yet.", "fixable_by": "skill", "fix_ref": "/agent-ready fix testing_feedback", "effort": "Low" },
+        "fast_feedback_loop": { "score": 0, "weight": 15, "layer": "portable", "evidence": "No fast subset documented.", "na": false, "why": "A fast subset enables seconds-long iteration.", "consequence": "No quick verification loop.", "fixable_by": "partial", "fix_ref": "/agent-ready fix testing_feedback", "effort": "Med" },
+        "feedback_quality": { "score": 0, "weight": 25, "layer": "portable", "evidence": "No tests or type-checker config (Swift is statically typed once code exists).", "na": false, "why": "Descriptive failures + type-checking yield actionable signals.", "consequence": "No feedback signal yet.", "fixable_by": "partial", "fix_ref": "/agent-ready fix testing_feedback", "effort": "Med" },
+        "coverage_reasonable": { "score": 0, "weight": 20, "layer": "portable", "evidence": "No coverage config or test breadth.", "na": false, "why": "Coverage makes test feedback trustworthy.", "consequence": "No coverage measurement.", "fixable_by": "partial", "fix_ref": "/agent-ready fix testing_feedback", "effort": "Med" }
+      }
+    },
+    "cicd_automation_governance": {
+      "weight": 14, "raw_score": 41.3, "weighted_score": 5.8,
+      "subcriteria": {
+        "ci_runs_tests_lint": { "score": 50, "weight": 30, "layer": "portable", "evidence": ".github/workflows/ci.yml present with build/test/lint stages, currently echo-TODO placeholders.", "na": false, "why": "CI is the mandatory feedback gate for agent-authored changes.", "consequence": "Stages don't execute real commands yet.", "fixable_by": "skill", "fix_ref": "/agent-ready fix cicd_automation_governance", "effort": "Low" },
+        "lint_format_automated": { "score": 25, "weight": 25, "layer": "portable", "evidence": "swiftlint/swift-format referenced in pre-commit + CI, but no linter config file (.swiftlint.yml) committed.", "na": false, "why": "A runnable linter config enforces conventions mechanically.", "consequence": "Tools referenced but not configured.", "fixable_by": "skill", "fix_ref": "/agent-ready fix cicd_automation_governance", "effort": "Low" },
+        "pre_commit_hooks": { "score": 100, "weight": 20, "layer": "portable", "evidence": ".pre-commit-config.yaml with detect-secrets, file hygiene hooks, and swiftlint/swift-format local hooks.", "na": false },
+        "governance": { "score": 0, "weight": 25, "layer": "portable", "evidence": "No CODEOWNERS, no Dependabot/Renovate config.", "na": false, "why": "CODEOWNERS routes review; dependency automation keeps the surface fresh.", "consequence": "Agent PRs lack reviewers; deps will rot.", "fixable_by": "skill", "fix_ref": "/agent-ready fix cicd_automation_governance", "effort": "Low" }
+      }
+    },
+    "agent_tooling_capabilities": {
+      "weight": 12, "raw_score": 0.0, "weighted_score": 0.0,
+      "subcriteria": {
+        "standard_skills": { "score": 0, "weight": 30, "layer": "portable", "evidence": "No project-level SKILL.md.", "na": false, "why": "Standard Skills package reusable, portable capabilities.", "consequence": "Workflows live in ad-hoc prompts.", "fixable_by": "partial", "fix_ref": "/agent-ready fix agent_tooling_capabilities", "effort": "Med" },
+        "bundled_helper_scripts": { "score": 0, "weight": 15, "layer": "portable", "evidence": "No bundled scripts/ in a Skill.", "na": false, "why": "Scripts keep deterministic logic out of context.", "consequence": "Deterministic ops re-derived each run.", "fixable_by": "partial", "fix_ref": "/agent-ready fix agent_tooling_capabilities", "effort": "Med" },
+        "mcp_declaration": { "score": 0, "weight": 25, "layer": "portable", "evidence": "No committed .mcp.json or vendor MCP config in the project.", "na": false, "why": "A committed MCP config makes tool access reproducible.", "consequence": "Each user wires servers manually/inconsistently.", "fixable_by": "skill", "fix_ref": "/agent-ready fix agent_tooling_capabilities", "effort": "Low" },
+        "nav_comprehension_mcp_servers": { "score": 0, "weight": 20, "layer": "portable", "evidence": "No Serena/Sourcegraph/Context7 wired in the project.", "na": false, "why": "These give exact symbol/reference/search capability.", "consequence": "Agents rely on fuzzy text search.", "fixable_by": "manual", "fix_ref": "Register Serena et al. in MCP config.", "effort": "Med" },
+        "custom_commands": { "score": 0, "weight": 10, "layer": "target", "evidence": "No .claude/commands/ in the project.", "na": false, "why": "Committed commands capture repeatable per-agent workflows (Skills preferred).", "consequence": "Recurring workflows retyped.", "fixable_by": "partial", "fix_ref": "/agent-ready fix agent_tooling_capabilities", "effort": "Low" }
+      }
+    },
+    "security_sandbox": {
+      "weight": 12, "raw_score": 47.5, "weighted_score": 5.7,
+      "subcriteria": {
+        "committed_isolation_config": { "score": 0, "weight": 20, "layer": "portable", "evidence": "No .devcontainer/ or committed sandbox config.", "na": false, "why": "True isolation is the only reliable boundary for autonomous execution.", "consequence": "Compromised code can reach network/secrets freely.", "fixable_by": "partial", "fix_ref": "/agent-ready fix security_sandbox", "effort": "Med" },
+        "documented_execution_policy": { "score": 100, "weight": 15, "layer": "portable", "evidence": "docs/agent-execution.md names LINCE/devcontainer/OS-sandbox/hosted + safe-to-run and ask-first lists.", "na": false },
+        "agent_permission_policy": { "score": 0, "weight": 15, "layer": "target", "evidence": "No restrictive .claude/settings.json deny rules.", "na": false, "why": "A restrictive policy constrains unprompted agent actions.", "consequence": "Agents may run arbitrary commands unprompted.", "fixable_by": "manual", "fix_ref": "Author deny rules per threat model.", "effort": "Med" },
+        "secret_hygiene": { "score": 75, "weight": 25, "layer": "portable", "evidence": ".gitignore covers secrets 100% + .env.example (no values) + detect-secrets hook; CI secret scanning/push protection not yet enabled (secret_hygiene.py).", "na": false, "why": "AI commits leak secrets at ~2x baseline; defense in layers prevents leaks.", "consequence": "Without host-side scanning, a leak can reach the remote.", "fixable_by": "partial", "fix_ref": "/agent-ready fix security_sandbox", "effort": "Med" },
+        "supply_chain_pinning": { "score": 25, "weight": 15, "layer": "portable", "evidence": "No deps/lockfiles yet (greenfield); no Dependabot/Renovate (lockfile_check.py).", "na": false, "why": "Committed lockfiles + auto-updates pin the dependency surface.", "consequence": "Once deps land, unpinned builds drift.", "fixable_by": "partial", "fix_ref": "/agent-ready fix security_sandbox", "effort": "Low" },
+        "injection_hygiene": { "score": 100, "weight": 10, "layer": "portable", "evidence": "Instructions live only in trusted files; no injected/executable content in docs.", "na": false }
+      }
+    },
+    "spec_driven_workflow_docs": {
+      "weight": 10, "raw_score": 28.8, "weighted_score": 2.9,
+      "subcriteria": {
+        "spec_tasks_dir": { "score": 50, "weight": 25, "layer": "portable", "evidence": "specs/ with TEMPLATE.md (template present; no populated specs yet).", "na": false, "why": "A specs dir gives agents an authoritative statement of what to build.", "consequence": "No real specs to steer work yet.", "fixable_by": "skill", "fix_ref": "/agent-ready fix spec_driven_workflow_docs", "effort": "Low" },
+        "acceptance_criteria": { "score": 50, "weight": 20, "layer": "portable", "evidence": "specs/TEMPLATE.md includes an acceptance-criteria section; no populated specs yet.", "na": false, "why": "Acceptance criteria give a verifiable definition of done.", "consequence": "Done is subjective until specs are written.", "fixable_by": "partial", "fix_ref": "/agent-ready fix spec_driven_workflow_docs", "effort": "Med" },
+        "issue_pr_templates": { "score": 0, "weight": 15, "layer": "portable", "evidence": "No .github/ISSUE_TEMPLATE/ or PR template.", "na": false, "why": "Templates standardize context per unit of work.", "consequence": "Issues/PRs arrive with inconsistent context.", "fixable_by": "skill", "fix_ref": "/agent-ready fix spec_driven_workflow_docs", "effort": "Low" },
+        "adr_decisions": { "score": 0, "weight": 15, "layer": "portable", "evidence": "No docs/adr/ or decision log.", "na": false, "why": "ADRs preserve the why behind design choices.", "consequence": "Agents reverse intentional decisions.", "fixable_by": "partial", "fix_ref": "/agent-ready fix spec_driven_workflow_docs", "effort": "Med" },
+        "docs_comprehension_signals": { "score": 25, "weight": 25, "layer": "portable", "evidence": "docs/ present (agent-execution.md); no ARCHITECTURE.md, no changelog, no code yet for type/docstring signals.", "na": false, "why": "Architecture doc + type/docstring coverage aid comprehension.", "consequence": "No structural overview or changelog yet.", "fixable_by": "partial", "fix_ref": "/agent-ready fix spec_driven_workflow_docs", "effort": "Med" }
+      }
+    }
+  },
+  "script_signals": {
+    "available": true,
+    "repo_map": { "files_analyzed": 0 },
+    "file_metrics": { "total_source_files": 7, "total_loc": 350, "oversized_file_count": 0 },
+    "coverage_signals": { "files_analyzed": 0 },
+    "secret_hygiene": { "gitignore_coverage_pct": 100.0, "env_example_present": true, "committed_secret_count": 0 },
+    "lockfile_check": { "lockfile_count": 0, "strong_lockfile_committed": false },
+    "test_commands": { "has_test_command": false, "has_build_command": false, "has_lint_command": false },
+    "instruction_audit": { "file_count": 2, "any_over_conciseness_limit": false, "note": "AGENTS.md/CLAUDE.md duplication is a symlink bridge, not a copy" }
+  },
+  "top_improvements": [
+    { "dimension": "testing_feedback", "potential_gain": 15.2, "effort": "High", "description": "Add a test suite + document/wire real test commands once code exists." },
+    { "dimension": "agent_tooling_capabilities", "potential_gain": 12.0, "effort": "Med", "description": "Declare an MCP config (Serena for Swift nav) and add a project Skill." },
+    { "dimension": "cicd_automation_governance", "potential_gain": 8.2, "effort": "Low", "description": "Add CODEOWNERS + Dependabot, wire real CI commands and a swiftlint config." },
+    { "dimension": "navigability_code_intelligence", "potential_gain": 7.5, "effort": "High", "description": "Add Package.swift/Xcode project for clear modules + dependency graph." },
+    { "dimension": "spec_driven_workflow_docs", "potential_gain": 7.1, "effort": "Low", "description": "Add issue/PR templates, an ADR dir, and an ARCHITECTURE.md." }
+  ]
+}

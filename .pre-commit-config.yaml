@@ -1,0 +1,37 @@
+# Pre-commit hooks for CmdTab.
+# Install once:  pip install pre-commit && pre-commit install
+# Run on all files:  pre-commit run --all-files
+#
+# Swift hooks require the corresponding tools on PATH:
+#   brew install swiftlint swift-format
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: check-merge-conflict
+
+  # Secret scanning — blocks committing credentials.
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+
+  # Swift lint + format (local hooks; require swiftlint / swift-format installed).
+  - repo: local
+    hooks:
+      - id: swiftlint
+        name: swiftlint
+        entry: swiftlint
+        language: system
+        types: [swift]
+        pass_filenames: false
+      - id: swift-format
+        name: swift-format
+        entry: swift format lint --recursive
+        language: system
+        types: [swift]

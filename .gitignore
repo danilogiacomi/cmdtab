@@ -1,0 +1,36 @@
+# --- Secrets / credentials (keep first; never commit these) ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_rsa.*
+*credentials*
+
+# --- macOS ---
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+
+# --- Xcode ---
+build/
+DerivedData/
+*.xcuserstate
+*.xcscmblueprint
+xcuserdata/
+*.xccheckout
+*.moved-aside
+
+# --- Swift Package Manager ---
+.build/
+.swiftpm/
+Packages/
+# Note: commit Package.resolved for reproducible builds.
+
+# --- Editors / tooling ---
+.idea/
+*.swp
