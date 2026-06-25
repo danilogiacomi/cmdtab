@@ -68,8 +68,13 @@ final class SwitcherOverlay {
         let scroll = NSScrollView()
         scroll.translatesAutoresizingMaskIntoConstraints = false
         scroll.drawsBackground = false
-        scroll.hasVerticalScroller = true
-        scroll.scrollerStyle = .overlay
+        // No visible scroller: this is a transient, keyboard-driven HUD whose
+        // content usually fits, and the selection auto-scrolls into view. A
+        // scroller adds no value here and the first overlay scroller created in
+        // the process flashes visible once before auto-hiding (the "scrollbar on
+        // first launch" glitch). The clip view still scrolls via wheel/trackpad
+        // and scrollToVisible for the rare overflowing list.
+        scroll.hasVerticalScroller = false
         scroll.automaticallyAdjustsContentInsets = false
         bg.addSubview(scroll)
         NSLayoutConstraint.activate([
