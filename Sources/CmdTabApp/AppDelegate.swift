@@ -76,6 +76,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         controller.onHide = { [weak self] in
             self?.overlay.hide()
+            // Keep the key monitor's gesture mirror in sync: a mouse-click
+            // commit hides the overlay without the monitor seeing any keys.
+            self?.monitor.overlayDidHide()
         }
         self.controller = controller
 

@@ -42,6 +42,15 @@ final class CGEventTapHotkeyMonitor: HotkeyMonitoring {
         CGEvent.tapEnable(tap: tap, enable: true)
     }
 
+    /// Called when the overlay is dismissed by a path that bypasses this
+    /// monitor (e.g. a mouse click on a row commits via the controller). Without
+    /// this, our `active` mirror stays stuck true while the overlay is actually
+    /// closed, so the next ⌘-held Tab is treated as "advance" (ignored) instead
+    /// of "open", and Esc/arrows get wrongly swallowed — until ⌘ is released.
+    func overlayDidHide() {
+        active = false
+    }
+
     func stop() {
         if let tap { CGEvent.tapEnable(tap: tap, enable: false) }
         if let runLoop = startRunLoop, let src = runLoopSource {
