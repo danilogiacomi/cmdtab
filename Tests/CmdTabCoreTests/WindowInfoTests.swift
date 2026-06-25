@@ -25,4 +25,21 @@ final class WindowInfoTests: XCTestCase {
         XCTAssertTrue(flagged.isHidden)
         XCTAssertNotEqual(plain, flagged)
     }
+
+    func testNewStateFlagsDefaultFalseAndStore() {
+        let plain = WindowInfo(id: 1, pid: 10, appName: "Safari", title: "Inbox", isMinimized: false)
+        XCTAssertFalse(plain.isOnOtherSpace)
+        XCTAssertFalse(plain.isDialog)
+        XCTAssertFalse(plain.isCurrent)
+
+        let flagged = WindowInfo(
+            id: 2, pid: 10, appName: "Safari", title: "Inbox",
+            isMinimized: false, isFullScreen: false, isHidden: false,
+            isOnOtherSpace: true, isDialog: true, isCurrent: true
+        )
+        XCTAssertTrue(flagged.isOnOtherSpace)
+        XCTAssertTrue(flagged.isDialog)
+        XCTAssertTrue(flagged.isCurrent)
+        XCTAssertNotEqual(plain, flagged)
+    }
 }

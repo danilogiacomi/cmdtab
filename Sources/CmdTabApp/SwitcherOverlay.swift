@@ -103,7 +103,10 @@ final class SwitcherOverlay {
                 title: win.title,
                 isMinimized: win.isMinimized,
                 isFullScreen: win.isFullScreen,
-                isHidden: win.isHidden
+                isHidden: win.isHidden,
+                isOnOtherSpace: win.isOnOtherSpace,
+                isDialog: win.isDialog,
+                isCurrent: win.isCurrent
             )
             row.translatesAutoresizingMaskIntoConstraints = false
             row.onHover = { [weak self] index in
