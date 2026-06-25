@@ -15,7 +15,10 @@ final class OverlayRowView: NSView {
         title: String,
         isMinimized: Bool,
         isFullScreen: Bool,
-        isHidden: Bool
+        isHidden: Bool,
+        isOnOtherSpace: Bool,
+        isDialog: Bool,
+        isCurrent: Bool
     ) {
         self.index = index
         super.init(frame: .zero)
@@ -34,16 +37,24 @@ final class OverlayRowView: NSView {
         titleLabel.textColor = .labelColor
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
 
-        // Trailing column of state icons; only active states get a view.
-        let states = NSStackView()
-        states.orientation = .horizontal
-        states.spacing = 6
-        states.translatesAutoresizingMaskIntoConstraints = false
-        states.setContentHuggingPriority(.required, for: .horizontal)
-        states.setContentCompressionResistancePriority(.required, for: .horizontal)
+        // Fixed-width reserved zone (3 icon slots), so every row's title
+        // truncates at the same column. Active icons render right-aligned
+        // inside it, in a stable priority order.
+        let zoneWidth: CGFloat = 3 * 16 + 2 * 6   // 3 slots + inter-icon spacing
+        let zone = NSView()
+        zone.translatesAutoresizingMaskIntoConstraints = false
+
+        let icons = NSStackView()
+        icons.orientation = .horizontal
+        icons.spacing = 6
+        icons.translatesAutoresizingMaskIntoConstraints = false
+
         let symbols: [(Bool, String, String)] = [
+            (isCurrent, "checkmark.circle", "Current window"),
+            (isDialog, "exclamationmark.bubble", "Dialog"),
             (isMinimized, "minus.circle", "Minimized"),
             (isFullScreen, "arrow.up.left.and.arrow.down.right", "Full screen"),
+            (isOnOtherSpace, "macwindow.on.rectangle", "On another Space"),
             (isHidden, "eye.slash", "Hidden"),
         ]
         for (active, symbol, label) in symbols where active {
@@ -53,22 +64,27 @@ final class OverlayRowView: NSView {
             view.translatesAutoresizingMaskIntoConstraints = false
             view.widthAnchor.constraint(equalToConstant: 16).isActive = true
             view.heightAnchor.constraint(equalToConstant: 16).isActive = true
-            states.addArrangedSubview(view)
+            icons.addArrangedSubview(view)
         }
+        zone.addSubview(icons)
 
         addSubview(iconView)
         addSubview(titleLabel)
-        addSubview(states)
+        addSubview(zone)
         NSLayoutConstraint.activate([
             iconView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 6),
             iconView.centerYAnchor.constraint(equalTo: centerYAnchor),
             iconView.widthAnchor.constraint(equalToConstant: 44),
             iconView.heightAnchor.constraint(equalToConstant: 44),
             titleLabel.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 8),
-            titleLabel.trailingAnchor.constraint(equalTo: states.leadingAnchor, constant: -8),
+            titleLabel.trailingAnchor.constraint(equalTo: zone.leadingAnchor, constant: -8),
             titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
-            states.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
-            states.centerYAnchor.constraint(equalTo: centerYAnchor),
+            zone.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
+            zone.centerYAnchor.constraint(equalTo: centerYAnchor),
+            zone.widthAnchor.constraint(equalToConstant: zoneWidth),
+            zone.heightAnchor.constraint(equalToConstant: 44),
+            icons.trailingAnchor.constraint(equalTo: zone.trailingAnchor),
+            icons.centerYAnchor.constraint(equalTo: zone.centerYAnchor),
         ])
     }
 
