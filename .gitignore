@@ -34,3 +34,6 @@ Packages/
 # --- Editors / tooling ---
 .idea/
 *.swp
+
+# --- Claude Code (commit shared settings.json; keep local overrides out) ---
+.claude/settings.local.json
