@@ -1,0 +1,16 @@
+#!/bin/sh
+# Keep README's "Built by agents" section in sync with this repo's local agent logs.
+# Regenerates the section and re-stages README.md so each commit reflects the latest
+# development footprint. No-op on machines without local logs (the script leaves the
+# section untouched), so this is safe in CI and on fresh clones.
+#
+# Enabled via:  git config core.hooksPath .githooks
+
+command -v bun >/dev/null 2>&1 || exit 0   # bun not installed → skip silently
+
+# NB: `bun <file>`, not `bun run <file>` — under `bun run` a script's
+# `import.meta.main` is false (Bun 1.3.x), so main() never executes and the
+# hook would silently do nothing.
+bun Scripts/usage-self.ts || exit 0   # never block a commit on this
+git add README.md
+exit 0
