@@ -18,6 +18,8 @@ import CmdTabCore
 final class SystemWindowEnumerator: WindowEnumerating {
     /// Our own process ID, so we never list CmdTab's own windows.
     private let ownPID = ProcessInfo.processInfo.processIdentifier
+    /// Main CGS connection, reused for Space lookups.
+    private let cgsConnection = CGSMainConnectionID()
 
     func snapshot() -> [WindowInfo] {
         var result: [WindowInfo] = []
@@ -42,16 +44,21 @@ final class SystemWindowEnumerator: WindowEnumerating {
                 var wid = CGWindowID(0)
                 guard _AXUIElementGetWindow(axWindow, &wid) == .success, wid != 0, !seen.contains(wid) else { continue }
                 seen.insert(wid)
+                let minimized = isMinimized(axWindow)
+                let fullScreen = isFullScreen(axWindow)
                 result.append(WindowInfo(
                     id: wid,
                     pid: pid,
                     appName: appName,
                     title: axTitle(axWindow),
-                    isMinimized: isMinimized(axWindow),
-                    isFullScreen: isFullScreen(axWindow),
+                    isMinimized: minimized,
+                    isFullScreen: fullScreen,
                     // App-scoped: macOS hides whole apps (Cmd+H), not individual
                     // windows, so every window of a hidden app reports isHidden.
                     isHidden: app.isHidden,
+                    // Suppressed when minimized/full screen — those are the more
+                    // specific signal, so the generic "elsewhere" icon is redundant.
+                    isOnOtherSpace: !minimized && !fullScreen && isOnOtherSpace(wid),
                     isDialog: isDialog(axWindow),
                     isCurrent: pid == frontmostPID && isMain(axWindow)
                 ))
@@ -98,6 +105,17 @@ final class SystemWindowEnumerator: WindowEnumerating {
         guard AXUIElementCopyAttributeValue(element, kAXMainAttribute as CFString, &value) == .success
         else { return false }
         return (value as? Bool) == true
+    }
+
+    /// True when the window lives on a Space other than the active one.
+    /// Returns false on any CGS failure (degrade to "not flagged").
+    private func isOnOtherSpace(_ wid: CGWindowID) -> Bool {
+        let active = CGSGetActiveSpace(cgsConnection)
+        guard active != 0 else { return false }
+        let windows = [NSNumber(value: wid)] as CFArray
+        guard let spaces = CGSCopySpacesForWindows(cgsConnection, Int32(kCGSAllSpacesMask), windows) as? [Int],
+              !spaces.isEmpty else { return false }
+        return !spaces.contains(Int(active))
     }
 
     private func axTitle(_ element: AXUIElement) -> String {
