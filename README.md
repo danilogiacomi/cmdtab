@@ -10,10 +10,10 @@ its own row, one keystroke away.
 
 ```
         ┌───────────────────────────────────────────────┐
-        │   ▸ ⌨  Terminal — ~/Progetti/cmdtab            │
-        │     🌐  Safari — Pull Request #42               │
-        │     📝  Xcode — SwitcherOverlay.swift           │
-        │     🗂  Finder — Downloads                       │
+        │   ▸ ⌨  Terminal — ~/Progetti/cmdtab           │
+        │     🌐  Safari — Pull Request #42             │
+        │     📝  Xcode — SwitcherOverlay.swift         │
+        │     🗂  Finder — Downloads                    │
         └───────────────────────────────────────────────┘
               hold ⌘ · tap Tab to advance · release to switch
 ```

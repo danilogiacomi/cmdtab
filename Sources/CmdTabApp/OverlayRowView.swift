@@ -26,6 +26,10 @@ final class OverlayRowView: NSView {
         layer?.cornerRadius = 8
 
         iconView.image = icon
+        // App icons report a small natural size; without this the default
+        // .scaleProportionallyDown refuses to enlarge them past it, so the
+        // icon frame can grow with no visible effect.
+        iconView.imageScaling = .scaleProportionallyUpOrDown
         iconView.translatesAutoresizingMaskIntoConstraints = false
 
         let shown = title.isEmpty ? appName : "\(appName) — \(title)"
