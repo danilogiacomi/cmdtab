@@ -22,6 +22,10 @@ final class SystemWindowEnumerator: WindowEnumerating {
     func snapshot() -> [WindowInfo] {
         var result: [WindowInfo] = []
         var seen = Set<CGWindowID>()
+        // The current window = the AXMain window of whatever app is frontmost.
+        // CmdTab's overlay is a non-activating panel, so frontmost stays the
+        // user's previously focused app while the switcher is open.
+        let frontmostPID = NSWorkspace.shared.frontmostApplication?.processIdentifier
 
         for app in NSWorkspace.shared.runningApplications
         where app.activationPolicy == .regular && app.processIdentifier != ownPID {
@@ -47,7 +51,9 @@ final class SystemWindowEnumerator: WindowEnumerating {
                     isFullScreen: isFullScreen(axWindow),
                     // App-scoped: macOS hides whole apps (Cmd+H), not individual
                     // windows, so every window of a hidden app reports isHidden.
-                    isHidden: app.isHidden
+                    isHidden: app.isHidden,
+                    isDialog: isDialog(axWindow),
+                    isCurrent: pid == frontmostPID && isMain(axWindow)
                 ))
             }
         }
@@ -77,6 +83,19 @@ final class SystemWindowEnumerator: WindowEnumerating {
     private func isFullScreen(_ element: AXUIElement) -> Bool {
         var value: CFTypeRef?
         guard AXUIElementCopyAttributeValue(element, "AXFullScreen" as CFString, &value) == .success
+        else { return false }
+        return (value as? Bool) == true
+    }
+
+    private func isDialog(_ element: AXUIElement) -> Bool {
+        guard let subrole = axString(element, kAXSubroleAttribute as CFString) else { return false }
+        return subrole == (kAXDialogSubrole as String)
+            || subrole == (kAXSystemDialogSubrole as String)
+    }
+
+    private func isMain(_ element: AXUIElement) -> Bool {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(element, kAXMainAttribute as CFString, &value) == .success
         else { return false }
         return (value as? Bool) == true
     }
