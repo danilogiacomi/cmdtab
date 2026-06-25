@@ -1,4 +1,5 @@
 import AppKit
+import CmdTabCore
 
 final class OverlayRowView: NSView {
     var onHover: ((Int) -> Void)?
@@ -8,18 +9,7 @@ final class OverlayRowView: NSView {
     private let iconView = NSImageView()
     private let titleLabel = NSTextField(labelWithString: "")
 
-    init(
-        index: Int,
-        icon: NSImage?,
-        appName: String,
-        title: String,
-        isMinimized: Bool,
-        isFullScreen: Bool,
-        isHidden: Bool,
-        isOnOtherSpace: Bool,
-        isDialog: Bool,
-        isCurrent: Bool
-    ) {
+    init(index: Int, icon: NSImage?, window: WindowInfo) {
         self.index = index
         super.init(frame: .zero)
         wantsLayer = true
@@ -32,7 +22,7 @@ final class OverlayRowView: NSView {
         iconView.imageScaling = .scaleProportionallyUpOrDown
         iconView.translatesAutoresizingMaskIntoConstraints = false
 
-        let shown = title.isEmpty ? appName : "\(appName) — \(title)"
+        let shown = window.title.isEmpty ? window.appName : "\(window.appName) — \(window.title)"
         titleLabel.stringValue = shown
         titleLabel.lineBreakMode = .byTruncatingTail
         // Yield rather than force the row (and panel) wider for long titles.
@@ -43,7 +33,7 @@ final class OverlayRowView: NSView {
 
         // Fixed-width reserved zone (3 icon slots), so every row's title
         // truncates at the same column. Active icons render right-aligned
-        // inside it, in a stable priority order.
+        // inside it, in the shared priority order.
         let zoneWidth: CGFloat = 3 * 16 + 2 * 6   // 3 slots + inter-icon spacing
         let zone = NSView()
         zone.translatesAutoresizingMaskIntoConstraints = false
@@ -53,16 +43,8 @@ final class OverlayRowView: NSView {
         icons.spacing = 6
         icons.translatesAutoresizingMaskIntoConstraints = false
 
-        let symbols: [(Bool, String, String)] = [
-            (isCurrent, "checkmark.circle", "Current window"),
-            (isDialog, "exclamationmark.bubble", "Dialog"),
-            (isMinimized, "minus.circle", "Minimized"),
-            (isFullScreen, "arrow.up.left.and.arrow.down.right", "Full screen"),
-            (isOnOtherSpace, "macwindow.on.rectangle", "On another Space"),
-            (isHidden, "eye.slash", "Hidden"),
-        ]
-        for (active, symbol, label) in symbols where active {
-            let image = NSImage(systemSymbolName: symbol, accessibilityDescription: label)
+        for descriptor in windowStateDescriptors where descriptor.isActive(window) {
+            let image = NSImage(systemSymbolName: descriptor.symbolName, accessibilityDescription: descriptor.title)
             let view = NSImageView(image: image ?? NSImage())
             view.contentTintColor = .secondaryLabelColor
             view.translatesAutoresizingMaskIntoConstraints = false

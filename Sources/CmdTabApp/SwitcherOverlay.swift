@@ -101,18 +101,7 @@ final class SwitcherOverlay {
 
         rows = windows.enumerated().map { idx, win in
             let icon = NSRunningApplication(processIdentifier: win.pid)?.icon
-            let row = OverlayRowView(
-                index: idx,
-                icon: icon,
-                appName: win.appName,
-                title: win.title,
-                isMinimized: win.isMinimized,
-                isFullScreen: win.isFullScreen,
-                isHidden: win.isHidden,
-                isOnOtherSpace: win.isOnOtherSpace,
-                isDialog: win.isDialog,
-                isCurrent: win.isCurrent
-            )
+            let row = OverlayRowView(index: idx, icon: icon, window: win)
             row.translatesAutoresizingMaskIntoConstraints = false
             row.onHover = { [weak self] index in
                 guard let self, self.mouseEngaged else { return }
