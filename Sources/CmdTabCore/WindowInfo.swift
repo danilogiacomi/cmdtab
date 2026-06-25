@@ -13,6 +13,9 @@ public struct WindowInfo: Equatable, Identifiable {
     public let isMinimized: Bool
     public let isFullScreen: Bool
     public let isHidden: Bool
+    public let isOnOtherSpace: Bool
+    public let isDialog: Bool
+    public let isCurrent: Bool
 
     public init(
         id: CGWindowID,
@@ -21,7 +24,10 @@ public struct WindowInfo: Equatable, Identifiable {
         title: String,
         isMinimized: Bool,
         isFullScreen: Bool = false,
-        isHidden: Bool = false
+        isHidden: Bool = false,
+        isOnOtherSpace: Bool = false,
+        isDialog: Bool = false,
+        isCurrent: Bool = false
     ) {
         self.id = id
         self.pid = pid
@@ -30,6 +36,9 @@ public struct WindowInfo: Equatable, Identifiable {
         self.isMinimized = isMinimized
         self.isFullScreen = isFullScreen
         self.isHidden = isHidden
+        self.isOnOtherSpace = isOnOtherSpace
+        self.isDialog = isDialog
+        self.isCurrent = isCurrent
     }
 
     /// What the overlay renders when the window has no title.
