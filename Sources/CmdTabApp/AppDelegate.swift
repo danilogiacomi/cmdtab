@@ -5,6 +5,7 @@ import CmdTabCore
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
+    private let legend = LegendWindowController()
 
     private let mru = MRUStore()
     private let enumerator = SystemWindowEnumerator()
@@ -29,6 +30,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         item.button?.title = "⌘⇥"
         let menu = NSMenu()
         menu.addItem(NSMenuItem(title: "CmdTab", action: nil, keyEquivalent: ""))
+        let legendItem = NSMenuItem(title: "Window State Icons…", action: #selector(showLegend), keyEquivalent: "")
+        legendItem.target = self
+        menu.addItem(legendItem)
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Quit CmdTab", action: #selector(quit), keyEquivalent: "q"))
         item.menu = menu
@@ -101,6 +105,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         var wid = CGWindowID(0)
         guard _AXUIElementGetWindow(axWindow, &wid) == .success else { return nil }
         return wid
+    }
+
+    @objc private func showLegend() {
+        legend.show()
     }
 
     @objc private func quit() {
