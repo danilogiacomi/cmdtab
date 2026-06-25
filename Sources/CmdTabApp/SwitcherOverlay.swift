@@ -20,8 +20,9 @@ final class SwitcherOverlay {
     private var mouseMonitor: Any?
 
     private let rowHeight: CGFloat = 50
-    private let width: CGFloat = 520
-    private let margin: CGFloat = 4
+    private let width: CGFloat = 750
+    private let margin: CGFloat = 10
+    private let verticalScreenMargin: CGFloat = 200
 
     func show(_ windows: [WindowInfo], selected: Int) {
         hide()
@@ -41,7 +42,7 @@ final class SwitcherOverlay {
         // Clamp the panel to the usable area so a long list never overflows; the
         // rows live in a scroll view, so overflow scrolls instead of growing.
         let naturalHeight = CGFloat(windows.count) * rowHeight + margin * 2
-        let panelHeight = min(naturalHeight, visible.height - 80)
+        let panelHeight = min(naturalHeight, visible.height - verticalScreenMargin)
 
         let panel = NSPanel(
             contentRect: NSRect(x: 0, y: 0, width: width, height: panelHeight),
@@ -136,6 +137,14 @@ final class SwitcherOverlay {
         // while the panel is still laying out triggers _NSDetectedLayoutRecursion.
         let target = rows[index]
         DispatchQueue.main.async { target.scrollToVisible(target.bounds) }
+    }
+
+    /// Whether the pointer is currently over the overlay panel. Both the panel
+    /// frame and `NSEvent.mouseLocation` are in Cocoa global screen coordinates,
+    /// so they compare directly without conversion.
+    func containsMouse() -> Bool {
+        guard let panel else { return false }
+        return panel.frame.contains(NSEvent.mouseLocation)
     }
 
     func hide() {

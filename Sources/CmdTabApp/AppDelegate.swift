@@ -89,6 +89,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         monitor.onCommand = { [weak controller] command in controller?.handle(command) }
+        monitor.isMouseInsideOverlay = { [weak self] in self?.overlay.containsMouse() ?? false }
         do {
             try monitor.start()
             NSLog("CmdTab: ready")

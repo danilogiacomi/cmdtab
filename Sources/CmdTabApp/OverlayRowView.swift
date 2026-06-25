@@ -22,7 +22,7 @@ final class OverlayRowView: NSView {
         iconView.imageScaling = .scaleProportionallyUpOrDown
         iconView.translatesAutoresizingMaskIntoConstraints = false
 
-        let shown = window.title.isEmpty ? window.appName : "\(window.appName) — \(window.title)"
+        let shown = window.title.isEmpty ? window.appName : (window.title)
         titleLabel.stringValue = shown
         titleLabel.lineBreakMode = .byTruncatingTail
         // Yield rather than force the row (and panel) wider for long titles.

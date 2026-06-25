@@ -7,6 +7,10 @@ enum HotkeyError: Error { case tapCreationFailed }
 final class CGEventTapHotkeyMonitor: HotkeyMonitoring {
     var onCommand: ((SwitcherCommand) -> Void)?
 
+    /// Whether the pointer is currently over the overlay panel. Lets a click on
+    /// a row pass through while a click anywhere outside dismisses the switcher.
+    var isMouseInsideOverlay: (() -> Bool)?
+
     private var tap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
     private var startRunLoop: CFRunLoop?
@@ -19,7 +23,10 @@ final class CGEventTapHotkeyMonitor: HotkeyMonitoring {
     private let kLeft: Int64 = 123, kRight: Int64 = 124, kDown: Int64 = 125, kUp: Int64 = 126
 
     func start() throws {
-        let mask = (1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.flagsChanged.rawValue)
+        let mask = (1 << CGEventType.keyDown.rawValue)
+            | (1 << CGEventType.flagsChanged.rawValue)
+            | (1 << CGEventType.leftMouseDown.rawValue)
+            | (1 << CGEventType.rightMouseDown.rawValue)
         let callback: CGEventTapCallBack = { _, type, event, refcon in
             let me = Unmanaged<CGEventTapHotkeyMonitor>.fromOpaque(refcon!).takeUnretainedValue()
             return me.handle(type: type, event: event)
@@ -67,6 +74,18 @@ final class CGEventTapHotkeyMonitor: HotkeyMonitoring {
         // Self-heal: the system disables taps on timeout / overload.
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
             if let tap { CGEvent.tapEnable(tap: tap, enable: true) }
+            return Unmanaged.passUnretained(event)
+        }
+
+        // A click outside the overlay dismisses it without switching apps: we
+        // swallow the event (return nil) so it never reaches the app underneath.
+        // A click inside (on a row) passes through to be handled by the panel.
+        if type == .leftMouseDown || type == .rightMouseDown {
+            if active, isMouseInsideOverlay?() != true {
+                active = false
+                emit(.cancel)
+                return nil
+            }
             return Unmanaged.passUnretained(event)
         }
 
