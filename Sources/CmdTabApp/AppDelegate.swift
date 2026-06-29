@@ -67,6 +67,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func startSwitcher() {
         guard controller == nil else { return }
+        // Seed the MRU from the current window stacking so the first ⌘⇥ reflects
+        // recency right away, before any app-activation events have been observed.
+        mru.seed(enumerator.zOrderedWindowIDs())
         let controller = SwitcherController(enumerator: enumerator, activator: activator, mru: mru)
         controller.onShow = { [weak self] windows, selected in
             self?.overlay.show(windows, selected: selected)

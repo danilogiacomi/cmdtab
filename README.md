@@ -84,12 +84,12 @@ Codex rollouts) on the machine that generated this section.
 
 | Metric | Value |
 |---|---|
-| **Total tokens** | **224.3M** |
-| Token breakdown | 1.3M output · 279.2K input · 6.3M cache-write · 216.4M cache-read |
-| Agent time | ~5h 42m active (78h 21m wall-clock) |
-| Turns | 1,054 assistant turns · 489 tool calls |
+| **Total tokens** | **227.9M** |
+| Token breakdown | 1.4M output · 309.4K input · 6.5M cache-write · 219.7M cache-read |
+| Agent time | ~6h 0m active (171h 11m wall-clock) |
+| Turns | 1,109 assistant turns · 513 tool calls |
 | Agents / models | Claude Code — claude-opus-4-8 |
-| As of | 2026-06-22 → 2026-06-25 |
+| As of | 2026-06-22 → 2026-06-29 |
 
 > 💡 Most of those tokens are *cache reads* — re-reading the growing conversation each
 > turn — which is why the total dwarfs the tokens actually written.

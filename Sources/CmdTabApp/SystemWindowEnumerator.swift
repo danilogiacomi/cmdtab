@@ -67,6 +67,27 @@ final class SystemWindowEnumerator: WindowEnumerating {
         return result
     }
 
+    /// On-screen window IDs in front-to-back z-order, for seeding the MRU at
+    /// launch so the very first ⌘⇥ ranks windows by their current stacking
+    /// (front-most = most recently used) instead of arbitrary AX order.
+    ///
+    /// Uses `CGWindowListCopyWindowInfo` purely for its z-ordering — we only
+    /// read the layer and window number, not titles, so no Screen Recording
+    /// permission is needed. Layer 0 keeps just normal application windows,
+    /// dropping the menu bar, Dock, and other helper surfaces.
+    func zOrderedWindowIDs() -> [CGWindowID] {
+        let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
+        guard let infoList = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else {
+            return []
+        }
+        return infoList.compactMap { info in
+            guard (info[kCGWindowLayer as String] as? Int) == 0,
+                  (info[kCGWindowOwnerPID as String] as? pid_t) != ownPID,
+                  let number = info[kCGWindowNumber as String] as? CGWindowID else { return nil }
+            return number
+        }
+    }
+
     /// A real, user-switchable window: reports the window role, and (if it
     /// declares a subrole) is a standard window or dialog — not a palette,
     /// popover, or other auxiliary surface. Windows without a subrole are kept.

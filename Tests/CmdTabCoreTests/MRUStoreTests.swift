@@ -26,4 +26,20 @@ final class MRUStoreTests: XCTestCase {
         s.prune(keeping: [2, 3])
         XCTAssertEqual(s.order, [3, 2])
     }
+
+    func testSeedPopulatesEmptyOrder() {
+        let s = MRUStore()
+        s.seed([5, 4, 3])
+        XCTAssertEqual(s.order, [5, 4, 3])
+        // A subsequent snapshot is now ranked by the seeded z-order.
+        let result = s.ordered([win(3), win(4), win(5)])
+        XCTAssertEqual(result.map { $0.id }, [5, 4, 3])
+    }
+
+    func testSeedDoesNotClobberExistingOrder() {
+        let s = MRUStore()
+        s.recordFocus(1)
+        s.seed([5, 4, 3])
+        XCTAssertEqual(s.order, [1])
+    }
 }

@@ -5,6 +5,15 @@ public final class MRUStore {
 
     public init() {}
 
+    /// Seed the MRU order, most-recent first (e.g. from window z-order at
+    /// launch, where the front-most window is the most recently used). No-op
+    /// once any focus has been recorded, so a real focus event never loses to
+    /// a late seed.
+    public func seed(_ ids: [CGWindowID]) {
+        guard order.isEmpty else { return }
+        order = ids
+    }
+
     /// Move a window to the front of the MRU list.
     public func recordFocus(_ id: CGWindowID) {
         order.removeAll { $0 == id }
